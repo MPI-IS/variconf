@@ -129,3 +129,5 @@ Missing Features
   `OmegaConf.set_struct`).
 - Option to load the config schema from a file.
 - Use custom errors, e.g. in case of unsupported file formats.
+- Find config file in a list of possible locations.
+- Find config file based on [XDG specification](https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html).
