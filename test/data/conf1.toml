@@ -1,0 +1,6 @@
+type = "toml"
+
+[foobar]
+foo = 42
+bar = 13
+nested = {one = 1, two = 2, three = 3}

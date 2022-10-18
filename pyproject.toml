@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=61.0.0"]
+build-backend = "setuptools.build_meta"
+
+
+[project]
+name = "wconf"
+version = "0.1.0"
+description = "Thin wrapper around OmegaConf for loading configuration from files."
+authors = [
+    {name = "Felix Widmaier"},
+]
+maintainers = [
+    {name = "Felix Widmaier", email = "felix.widmaier@tuebingen.mpg.de"}
+]
+readme = "README.md"
+license = {file = "LICENSE"}
+
+dependencies = [
+    "omegaconf",
+    "tomli",
+    "pyyaml",
+]
