@@ -92,6 +92,7 @@ class WConf:
 
     def get(self) -> oc.OmegaConf:
         """Get the configuration object."""
+        # TODO: Add allow_missing argument
         return self.cfg
 
     def load(self, fp: typing.IO, format: str) -> WConf:
