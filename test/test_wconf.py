@@ -105,8 +105,28 @@ def test_load_dotlist(wconf):
     }
 
 
-def test_add_loader():
-    NotImplemented
+def test_add_file_loader(test_data):
+    # write a load that wraps Python's ConfigParser
+    def configparser_loader(fp):
+        from configparser import ConfigParser
+
+        cfg = ConfigParser()
+        cfg.read_file(fp)
+        cfg_dict = {s: dict(cfg.items(s)) for s in cfg.sections()}
+        return cfg_dict
+
+    # test with load()
+    wconf = WConf({})
+    wconf.add_file_loader("ini", [".ini"], configparser_loader)
+    with open(test_data / "conf.ini") as f:
+        wconf.load(f, "ini")
+    assert wconf.get() == {"section1": {"foo": "42", "bar": "yes"}}
+
+    # test with load_file()
+    wconf = WConf({})
+    wconf.add_file_loader("ini", [".ini"], configparser_loader)
+    wconf.load_file(test_data / "conf.ini")
+    assert wconf.get() == {"section1": {"foo": "42", "bar": "yes"}}
 
 
 def test_load_xdg():
