@@ -37,10 +37,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-all = ["tomli", "pyyaml"]
+all = ["wconf[toml,yaml]"]
 toml = ["tomli"]
 yaml = ["pyyaml"]
-test = ["pytest"]
+test = ["wconf[all]", "pytest"]
 
 [tool.setuptools.dynamic]
 version = {attr = "wconf.__version__"}
