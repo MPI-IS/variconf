@@ -55,10 +55,12 @@ class WConf:
         # TODO: support schema from file
         self.cfg = oc.OmegaConf.create(schema)
 
-        self._loaders: typing.Callable[[typing.IO], dict] = {
-            "json": self._load_json,
-            "toml": self._load_toml,
-            "yaml": self._load_yaml,
+        self._loaders: typing.Dict[
+            str, typing.Tuple[typing.Callable[[typing.IO], dict], bool]
+        ] = {
+            "json": (self._load_json, False),
+            "toml": (self._load_toml, True),
+            "yaml": (self._load_yaml, False),
         }
         # map extension (including dot) to format type
         self._file_extensions = {
@@ -110,7 +112,7 @@ class WConf:
         """
         # TODO: handle fp type (text vs binary)
         # TODO: more specific error for unsupported format
-        loader = self._loaders[format]
+        loader, _ = self._loaders[format]
         cfg = loader(fp)
         self._merge(cfg)
 
@@ -131,7 +133,14 @@ class WConf:
         """
         file = pathlib.Path(file)
         fmt = self._file_extensions[file.suffix]
-        with open(file) as f:
+        _, binary = self._loaders[fmt]
+
+        if binary:
+            mode = "rb"
+        else:
+            mode = "rt"
+
+        with open(file, mode) as f:
             self.load(f, fmt)
 
         return self
@@ -141,6 +150,7 @@ class WConf:
         name: str,
         file_extensions: typing.Sequence[str],
         loader: typing.Callable[[typing.IO], dict],
+        binary: bool = False,
     ) -> None:
         """Add a custom file loader.
 
@@ -153,8 +163,9 @@ class WConf:
                 be detected.  The extensions must include the leading dot!
             loader:  Function that takes an file-like object as input and returns a
                 dictionary.
+            binary:  Set to True if the loader function expects a binary stream.
         """
-        self._loaders[name] = loader
+        self._loaders[name] = (loader, binary)
         self._file_extensions.update({ext: name for ext in file_extensions})
 
     def load_dict(self, config: typing.Mapping) -> WConf:
