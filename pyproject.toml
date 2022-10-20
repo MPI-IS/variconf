@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 
 [project]
-name = "wconf"
+name = "variconf"
 description = """\
     Wrapper around OmegaConf for loading configuration from various types of \
     files.\
@@ -27,8 +27,8 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Typing :: Typed",
 ]
-urls.Source = "https://github.com/MPI-IS/wconf"
-urls."Bug Tracker" = "https://github.com/MPI-IS/wconf/issues"
+urls.Source = "https://github.com/MPI-IS/variconf"
+urls."Bug Tracker" = "https://github.com/MPI-IS/variconf/issues"
 dynamic = ["version"]
 
 requires-python = ">=3.7"
@@ -37,13 +37,13 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-all = ["wconf[toml,yaml]"]
+all = ["variconf[toml,yaml]"]
 toml = ["tomli"]
 yaml = ["pyyaml"]
 
-test = ["wconf[all]", "pytest"]
+test = ["variconf[all]", "pytest"]
 # include test dependencies for mypy, so tests can be checked as well
-mypy = ["wconf[test]", "mypy", "types-PyYAML", "types-setuptools"]
+mypy = ["variconf[test]", "mypy", "types-PyYAML", "types-setuptools"]
 
 [tool.setuptools.dynamic]
-version = {attr = "wconf.__version__"}
+version = {attr = "variconf.__version__"}

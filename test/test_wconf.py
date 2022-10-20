@@ -2,7 +2,7 @@ import pathlib
 
 import pytest
 
-from wconf import WConf
+from variconf import WConf
 
 
 _schema = {

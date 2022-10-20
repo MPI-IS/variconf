@@ -1,8 +1,8 @@
-wConf - Easy Loading of Configurations from Files
-==================================================
+VariConf - Load Configurations from Various Types of Files
+==========================================================
 
-wConf is a wrapper around [OmegaConf](https://omegaconf.readthedocs.io) for loading
-configuration from various types of files.
+VariConf provides a wrapper around [OmegaConf](https://omegaconf.readthedocs.io) for
+loading configuration from various types of files.
 
 Supported file types are JSON, YAML and TOML.  Support for more file types can easily be
 added by registering a custom loader function.
@@ -39,7 +39,7 @@ listed above.
 
 There is, however, [OmegaConf](https://omegaconf.readthedocs.io), which already does
 most of it.  It mostly is only missing the flexibility regarding file types.
-Hence, I started to develop wConf, which is basically just a thin wrapper around
+Hence, I started to develop VariConf, which is basically just a thin wrapper around
 OmegaConf, adding the things that I was missing.
 
 
@@ -61,8 +61,10 @@ ones.
 All "load"-methods return ``self``, so they can be chained:
 
 ```python
+import variconf
+
 schema = {"sec1": {"foo": 42, "bar": 13}, "sec2": {"bla": ""}}
-wconf = WConf(schema)
+wconf = variconf.WConf(schema)
 config = (
     wconf.load_file("~/global_config.toml")
     .load_file("./local_config.yml")
@@ -104,7 +106,7 @@ class ConfigSchema:
     foo: int
     bar: str
 
-wconf = WConf(ConfigSchema)
+wconf = variconf.WConf(ConfigSchema)
 ```
 
 ### Required Values
