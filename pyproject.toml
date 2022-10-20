@@ -30,6 +30,9 @@ urls."Bug Tracker" = "https://github.com/MPI-IS/wconf/issues"
 
 dependencies = [
     "omegaconf",
-    "tomli",
-    "pyyaml",
 ]
+
+[project.optional-dependencies]
+all = ["tomli", "pyyaml"]
+toml = ["tomli"]
+yaml = ["pyyaml"]
