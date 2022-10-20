@@ -101,6 +101,16 @@ def test_load_file_unknown(wconf, test_data):
     assert str(e.value) == ".ini"
 
 
+def test_load_file_fail_if_not_found(wconf, test_data):
+    with pytest.raises(FileNotFoundError):
+        wconf.load_file(test_data / "does_not_exist.yml")
+
+
+def test_load_file_with_fail_if_not_found_false(wconf, test_data):
+    wconf.load_file(test_data / "does_not_exist.yml", fail_if_not_found=False)
+    assert wconf.get(allow_missing=True) == _schema
+
+
 def test_load_file_with_search_path(
     wconf: WConf, test_data: pathlib.Path, tmp_path: pathlib.Path
 ):
@@ -117,7 +127,7 @@ def test_load_file_with_search_path(
     shutil.copyfile(test_data / "conf2.json", tmp_path / "baz" / "conf.json")
 
     # test loading it
-    wconf.load_file("conf.json", paths)
+    wconf.load_file("conf.json", search_paths=paths)
     # verify that conf1.json (from "bar/") was found
     assert wconf.get() == {"foobar": _foobar, "type": "json"}
 
@@ -134,8 +144,12 @@ def test_load_file_with_search_path_not_found(wconf: WConf, tmp_path: pathlib.Pa
         p.mkdir()
 
     # loading will not be able to find the file, so the default config should remain
-    wconf.load_file("conf.json", paths)
-    assert wconf.get() == _schema
+    wconf.load_file("conf.json", search_paths=paths, fail_if_not_found=False)
+    assert wconf.get(allow_missing=True) == _schema
+
+    # when running with fail_if_not_found=True, it should raise an error
+    with pytest.raises(FileNotFoundError):
+        wconf.load_file("conf.json", search_paths=paths, fail_if_not_found=True)
 
 
 def test_load_dict(wconf):

@@ -152,6 +152,7 @@ class WConf:
     def load_file(
         self,
         file: _PathLike,
+        fail_if_not_found: bool = True,
         search_paths: typing.Optional[typing.Sequence[_PathLike]] = None,
     ) -> WConf:
         """Load configuration from the specified file.
@@ -162,16 +163,18 @@ class WConf:
 
         Args:
             file:  A file in one of the supported formats.
+            fail_if_not_found:  If true, raise an error if the file is not found.
+                Otherwise simply return without loading anything (i.e. keep the current
+                values).
             search_paths:  List of directories.  If set, search these directories for a
                 file with the name specified in ``file`` and loads the first file that
-                is found.  If no matching file is found, do not load anything (i.e.
-                keep the current values).
+                is found.
 
         Returns:
             ``self``, so methods can be chained when loading from multiple sources.
         """
         file = pathlib.Path(file)
-        # TODO: Add a "fail_if_not_found" argument
+        # TODO: This function can probably be refactored a bit
 
         # if search_path is set, check the listed directories for the file
         if search_paths:
@@ -184,13 +187,20 @@ class WConf:
                     break
 
             if not found:
-                # if file is not found, return without loading anything
-                return self
-                # raise FileNotFoundError(f"No file {file} found in {search_paths}")
+                if fail_if_not_found:
+                    raise FileNotFoundError(f"No file {file} found in {search_paths}")
+                else:
+                    return self
 
             file = _file
         else:
             file = pathlib.Path(file)
+
+        if not file.is_file():
+            if fail_if_not_found:
+                raise FileNotFoundError(file)
+            else:
+                return self
 
         try:
             fmt = self._file_extensions[file.suffix]

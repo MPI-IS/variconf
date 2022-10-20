@@ -88,7 +88,7 @@ schema = {"sec1": {"foo": 42, "bar": 13}, "sec2": {"bla": ""}}
 wconf = variconf.WConf(schema)
 config = (
     wconf.load_file("~/global_config.toml")
-    .load_file("./local_config.yml")
+    .load_file("./local_config.yml", fail_if_not_found=False)
     .load_dotlist(sys.argv[1:])  # easily allow overwriting parameters via
                                  # command-line arguments
     .get()  # return the final config object
@@ -106,11 +106,14 @@ Assuming an application where the config file can be located in one of several p
 wconf.load_file(
     "config.yml",
     search_paths=[os.expanduser("~"), os.expanduser("~/.config"), "/etc/myapp"],
+    fail_if_not_found=False,
 )
 ```
 This will search for a file "config.yml" in the listed directories (in the given order)
-and use the first match.  If none of the directories contains the file, `load_file()`
-will return without loading anything, thus keeping the default values.
+and use the first match.
+By setting `fail_if_not_found=False`, we specify that it's okay if the file is not found
+in any of these directories.  In this case, we simply keep the default values of all
+parameters.
 
 
 ### Supported File Types
