@@ -1,4 +1,5 @@
 import pathlib
+import shutil
 
 import pytest
 import omegaconf.errors
@@ -100,6 +101,43 @@ def test_load_file_unknown(wconf, test_data):
     assert str(e.value) == ".ini"
 
 
+def test_load_file_with_search_path(
+    wconf: WConf, test_data: pathlib.Path, tmp_path: pathlib.Path
+):
+    paths = [
+        tmp_path / "foo",
+        tmp_path / "bar",
+        tmp_path / "baz",
+    ]
+
+    # create directory structure and add config files
+    for p in paths:
+        p.mkdir()
+    shutil.copyfile(test_data / "conf1.json", tmp_path / "bar" / "conf.json")
+    shutil.copyfile(test_data / "conf2.json", tmp_path / "baz" / "conf.json")
+
+    # test loading it
+    wconf.load_file("conf.json", paths)
+    # verify that conf1.json (from "bar/") was found
+    assert wconf.get() == {"foobar": _foobar, "type": "json"}
+
+
+def test_load_file_with_search_path_not_found(wconf: WConf, tmp_path: pathlib.Path):
+    paths = [
+        tmp_path / "foo",
+        tmp_path / "bar",
+        tmp_path / "baz",
+    ]
+
+    # create directory structure but don't add an actual config file
+    for p in paths:
+        p.mkdir()
+
+    # loading will not be able to find the file, so the default config should remain
+    wconf.load_file("conf.json", paths)
+    assert wconf.get() == _schema
+
+
 def test_load_dict(wconf):
     wconf.load_dict(
         {
@@ -146,10 +184,6 @@ def test_add_file_loader(test_data):
 
 
 def test_load_xdg():
-    NotImplemented
-
-
-def test_load_from_path():
     NotImplemented
 
 

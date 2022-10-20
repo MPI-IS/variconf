@@ -95,6 +95,24 @@ config = (
 )
 ```
 
+
+### Search File
+
+Assuming an application where the config file can be located in one of several places
+(e.g. `~`, `~/.config` or `/etc/myapp`).  This situation is supported by the optional
+`search_paths` argument of `load_file()`:
+
+```python
+wconf.load_file(
+    "config.yml",
+    search_paths=[os.expanduser("~"), os.expanduser("~/.config"), "/etc/myapp"],
+)
+```
+This will search for a file "config.yml" in the listed directories (in the given order)
+and use the first match.  If none of the directories contains the file, `load_file()`
+will return without loading anything, thus keeping the default values.
+
+
 ### Supported File Types
 
 Supported file types are JSON, YAML and TOML.  Support for custom file types can be
@@ -163,5 +181,4 @@ Missing Features
   `OmegaConf.set_struct`).
 - Option to load the config schema from a file.
 - Use custom errors, e.g. in case of unsupported file formats.
-- Find config file in a list of possible locations.
 - Find config file based on [XDG specification](https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html).

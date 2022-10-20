@@ -149,7 +149,11 @@ class WConf:
 
         return self
 
-    def load_file(self, file: _PathLike) -> WConf:
+    def load_file(
+        self,
+        file: _PathLike,
+        search_paths: typing.Optional[typing.Sequence[_PathLike]] = None,
+    ) -> WConf:
         """Load configuration from the specified file.
 
         The format of the file is derived from the filename extension.
@@ -157,12 +161,36 @@ class WConf:
         loaders for other formats can be added with :meth:`add_file_loader`.
 
         Args:
-            file: A file in one of the supported formats.
+            file:  A file in one of the supported formats.
+            search_paths:  List of directories.  If set, search these directories for a
+                file with the name specified in ``file`` and loads the first file that
+                is found.  If no matching file is found, do not load anything (i.e.
+                keep the current values).
 
         Returns:
             ``self``, so methods can be chained when loading from multiple sources.
         """
         file = pathlib.Path(file)
+        # TODO: Add a "fail_if_not_found" argument
+
+        # if search_path is set, check the listed directories for the file
+        if search_paths:
+            found = False
+            for directory in search_paths:
+                directory = pathlib.Path(directory)
+                _file = directory / file
+                if _file.is_file():
+                    found = True
+                    break
+
+            if not found:
+                # if file is not found, return without loading anything
+                return self
+                # raise FileNotFoundError(f"No file {file} found in {search_paths}")
+
+            file = _file
+        else:
+            file = pathlib.Path(file)
 
         try:
             fmt = self._file_extensions[file.suffix]
@@ -235,11 +263,5 @@ class WConf:
 
     def load_xdg(self, filename: str) -> WConf:
         """TODO"""
-        raise NotImplementedError()
-        return self
-
-    def load_from_path(self, filename: str, path: typing.Sequence[_PathLike]) -> WConf:
-        """TODO"""
-        # TODO: better name?
         raise NotImplementedError()
         return self
