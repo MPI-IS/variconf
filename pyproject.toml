@@ -16,7 +16,6 @@ maintainers = [
     {name = "Felix Widmaier", email = "felix.widmaier@tue.mpg.de"}
 ]
 readme = "README.md"
-license = {file = "LICENSE"}
 keywords = ["config", "configuration"]
 classifiers = [
     "Development Status :: 3 - Alpha",
