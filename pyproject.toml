@@ -36,6 +36,7 @@ dependencies = [
 all = ["tomli", "pyyaml"]
 toml = ["tomli"]
 yaml = ["pyyaml"]
+test = ["pytest"]
 
 [tool.setuptools.dynamic]
 version = {attr = "wconf.__version__"}
