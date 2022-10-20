@@ -5,16 +5,26 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "wconf"
-version = "0.1.0"
-description = "Thin wrapper around OmegaConf for loading configuration from files."
+version = "1.0.0alpha1"
+description = """\
+    Wrapper around OmegaConf for loading configuration from various types of \
+    files.\
+    """
 authors = [
-    {name = "Felix Widmaier"},
+    {name = "Felix Widmaier", email = "felix.widmaier@tue.mpg.de"},
 ]
 maintainers = [
-    {name = "Felix Widmaier", email = "felix.widmaier@tuebingen.mpg.de"}
+    {name = "Felix Widmaier", email = "felix.widmaier@tue.mpg.de"}
 ]
 readme = "README.md"
 license = {file = "LICENSE"}
+keywords = ["config", "configuration"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python :: 3.8",
+]
+urls.Source = "https://github.com/MPI-IS/wconf"
+urls."Bug Tracker" = "https://github.com/MPI-IS/wconf/issues"
 
 dependencies = [
     "omegaconf",
