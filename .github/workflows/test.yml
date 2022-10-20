@@ -1,0 +1,31 @@
+# Install package via pip and run tests
+name: Tests
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  pytest:
+    strategy:
+      fail-fast: false
+      matrix:
+        python_version: ["3.7", "3.8", "3.9", "3.10"]
+        os: ["ubuntu-latest", "windows-latest", "macos-latest"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python_version }}
+      - name: Install latest pip and wheel
+        run: |
+          python -m pip install --upgrade pip wheel
+      - name: Install package
+        run: |
+          python -m pip install ".[test]"
+      - name: Run tests
+        run: |
+          python -m pytest test/
