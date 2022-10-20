@@ -43,6 +43,27 @@ Hence, I started to develop VariConf, which is basically just a thin wrapper aro
 OmegaConf, adding the things that I was missing.
 
 
+Installation
+------------
+
+Basic (does not include dependencies for YAML and TOML):
+```
+pip install variconf
+```
+
+With optional dependencies:
+```bash
+# with TOML support
+pip install "variconf[toml]"
+
+# with YAML support
+pip install "variconf[yaml]"
+
+# to include everything:
+pip install "variconf[all]"
+```
+
+
 Usage
 -----
 
