@@ -1,0 +1,48 @@
+name: Linters
+
+on: [pull_request]
+
+jobs:
+  mypy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+      - name: Install latest pip and wheel
+        run: |
+          python -m pip install --upgrade pip wheel
+      - name: Install package with mypy dependencies
+        run: |
+          python -m pip install ".[mypy]"
+      - name: Add matcher
+        run: |
+          echo "::add-matcher::.github/workflows/mypy-problem-matcher.json"
+      - name: Run mypy
+        run: |
+          python3 -m mypy --exclude build .
+
+  flake8:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+      - name: Install
+        run: |
+          python3 -m pip install flake8
+      - name: Add matcher
+        run: |
+          echo "::add-matcher::.github/workflows/flake8-problem-matcher.json"
+      - name: Lint with flake8
+        run: |
+          python3 -m flake8 .
+
+  black:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+      - uses: psf/black@stable
