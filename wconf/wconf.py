@@ -9,6 +9,12 @@ import omegaconf as oc
 
 _PathLike = typing.Union[os.PathLike, str]
 
+LoaderFunction = typing.Union[
+    typing.Callable[[typing.IO], dict],
+    typing.Callable[[typing.TextIO], dict],
+    typing.Callable[[typing.BinaryIO], dict],
+]
+
 
 class WConf:
     """Load configuration from files.
@@ -55,9 +61,7 @@ class WConf:
         # TODO: support schema from file
         self.cfg = oc.OmegaConf.create(schema)
 
-        self._loaders: typing.Dict[
-            str, typing.Tuple[typing.Callable[[typing.IO], dict], bool]
-        ] = {
+        self._loaders: typing.Dict[str, typing.Tuple[LoaderFunction, bool]] = {
             "json": (self._load_json, False),
             "toml": (self._load_toml, True),
             "yaml": (self._load_yaml, False),
@@ -97,7 +101,7 @@ class WConf:
         # TODO: Add allow_missing argument
         return self.cfg
 
-    def load(self, fp: typing.IO, format: str) -> WConf:
+    def load(self, fp, format: str) -> WConf:
         """Load configuration from the given stream.
 
         See :meth:`get_supported_formats` for a list of supported file formats.  Custom
@@ -149,7 +153,7 @@ class WConf:
         self,
         name: str,
         file_extensions: typing.Sequence[str],
-        loader: typing.Callable[[typing.IO], dict],
+        loader: LoaderFunction,
         binary: bool = False,
     ) -> None:
         """Add a custom file loader.
@@ -181,7 +185,7 @@ class WConf:
         self._merge(config)
         return self
 
-    def load_dotlist(self, dotlist: typing.Sequence[str]) -> WConf:
+    def load_dotlist(self, dotlist: typing.List[str]) -> WConf:
         """Load configuration from a "dotlist"
 
         A dotlist looks like this: ``["foo.bar=42", "baz=13", ...]``
