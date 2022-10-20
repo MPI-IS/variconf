@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import typing
 import pathlib
+import platform
 import os
 
 import omegaconf as oc
@@ -271,7 +272,46 @@ class WConf:
         self._merge(cfg)
         return self
 
-    def load_xdg(self, filename: str) -> WConf:
-        """TODO"""
-        raise NotImplementedError()
-        return self
+    @staticmethod
+    def _get_xdg_config_paths() -> typing.List[pathlib.Path]:
+        if platform.system() == "Windows":
+            raise NotImplementedError("XDG support is not implemented for Windows.")
+
+        # get config_home
+        config_home_default = pathlib.Path(os.environ["HOME"], ".config")
+
+        config_home = pathlib.Path(os.environ.get("XDG_CONFIG_HOME", ""))
+        if not config_home.is_absolute():
+            config_home = config_home_default
+
+        # get config dirs
+        config_dirs_str = os.environ.get("XDG_CONFIG_DIRS", "")
+        _config_dirs = config_dirs_str.split(":")
+        config_dirs = list(
+            filter(lambda p: p.is_absolute(), map(pathlib.Path, _config_dirs))
+        )
+        if not config_dirs:
+            config_dirs = [pathlib.Path("/etc/xdg")]
+
+        return [config_home] + config_dirs
+
+    def load_xdg_config(self, filename: _PathLike, fail_if_not_found=False) -> WConf:
+        """Load file from XDG config directory.
+
+        Searches for the specified file in the directories given in the
+        ``XDG_CONFIG_HOME`` and ``XDG_CONFIG_DIRS`` environment variables.  If they are
+        not set, they default to ``${HOME}/.config`` and ``/etc/xdg``.
+
+        For more information on the XDG base directory specification see
+        https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html
+
+        Args:
+            filename: Name of the file, relative to the config directory.
+            fail_if_not_found:  If true, raise an error if the file is not found.
+                Otherwise simply return without loading anything (i.e. keep the current
+                values).
+        """
+        paths = self._get_xdg_config_paths()
+        return self.load_file(
+            filename, fail_if_not_found=fail_if_not_found, search_paths=paths
+        )

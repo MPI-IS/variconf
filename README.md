@@ -116,6 +116,22 @@ in any of these directories.  In this case, we simply keep the default values of
 parameters.
 
 
+### Using XDG Base Directory Specification
+
+If your application follows the [XDG Base Directory
+Specification](https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html)
+you can use ``load_xdg_config()`` (currently not supported on Windows!):
+
+```python
+wconf.load_xdg_config("myapp/config.toml")
+```
+Will search for the file in the directories specified in the environment variables
+`XDG_CONFIG_HOME` and `XDG_CONFIG_DIRS` (defaulting to `~/.config`).
+
+Like for `load_file()` there is an argument `fail_if_not_found` but here it defaults to
+False as providing a config in `XDG_CONFIG_HOME` is typically optional.
+
+
 ### Supported File Types
 
 Supported file types are JSON, YAML and TOML.  Support for custom file types can be
@@ -184,4 +200,3 @@ Missing Features
   `OmegaConf.set_struct`).
 - Option to load the config schema from a file.
 - Use custom errors, e.g. in case of unsupported file formats.
-- Find config file based on [XDG specification](https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html).

@@ -1,5 +1,7 @@
-import pathlib
+import os
+import platform
 import shutil
+from pathlib import Path
 
 import pytest
 import omegaconf.errors
@@ -33,8 +35,8 @@ _foobar = {
 
 
 @pytest.fixture
-def test_data() -> pathlib.Path:
-    return pathlib.Path(__file__).parent / "data"
+def test_data() -> Path:
+    return Path(__file__).parent / "data"
 
 
 @pytest.fixture
@@ -111,9 +113,7 @@ def test_load_file_with_fail_if_not_found_false(wconf, test_data):
     assert wconf.get(allow_missing=True) == _schema
 
 
-def test_load_file_with_search_path(
-    wconf: WConf, test_data: pathlib.Path, tmp_path: pathlib.Path
-):
+def test_load_file_with_search_path(wconf: WConf, test_data: Path, tmp_path: Path):
     paths = [
         tmp_path / "foo",
         tmp_path / "bar",
@@ -132,7 +132,7 @@ def test_load_file_with_search_path(
     assert wconf.get() == {"foobar": _foobar, "type": "json"}
 
 
-def test_load_file_with_search_path_not_found(wconf: WConf, tmp_path: pathlib.Path):
+def test_load_file_with_search_path_not_found(wconf: WConf, tmp_path: Path):
     paths = [
         tmp_path / "foo",
         tmp_path / "bar",
@@ -197,8 +197,141 @@ def test_add_file_loader(test_data):
     assert wconf.get() == {"section1": {"foo": "42", "bar": "yes"}}
 
 
-def test_load_xdg():
-    NotImplemented
+def test_get_xdg_config_paths():
+    if platform.system() == "Windows":
+        # not supported on Windows
+        with pytest.raises(NotImplementedError):
+            WConf._get_xdg_config_paths()
+        return
+
+    # set HOME for this test
+    os.environ["HOME"] = "/home/foo"
+
+    # empty variables
+    os.environ["XDG_CONFIG_HOME"] = ""
+    os.environ["XDG_CONFIG_DIRS"] = ""
+    assert WConf._get_xdg_config_paths() == [
+        Path("/home/foo/.config"),
+        Path("/etc/xdg"),
+    ]
+
+    # undefined variables
+    del os.environ["XDG_CONFIG_HOME"]
+    del os.environ["XDG_CONFIG_DIRS"]
+    assert WConf._get_xdg_config_paths() == [
+        Path("/home/foo/.config"),
+        Path("/etc/xdg"),
+    ]
+
+    # some custom values (single value in DIRS)
+    os.environ["XDG_CONFIG_HOME"] = "/special/dir"
+    os.environ["XDG_CONFIG_DIRS"] = "/etc/different"
+    assert WConf._get_xdg_config_paths() == [
+        Path("/special/dir"),
+        Path("/etc/different"),
+    ]
+
+    # some custom values (multiple values in DIRS)
+    os.environ["XDG_CONFIG_HOME"] = "/special/dir"
+    os.environ["XDG_CONFIG_DIRS"] = "/etc/different:/opt/conf:/foo"
+    assert WConf._get_xdg_config_paths() == [
+        Path("/special/dir"),
+        Path("/etc/different"),
+        Path("/opt/conf"),
+        Path("/foo"),
+    ]
+
+    # relativ paths are invalid and should be ignored
+    os.environ["XDG_CONFIG_HOME"] = "special/dir"
+    os.environ["XDG_CONFIG_DIRS"] = "/etc/different:/opt/conf:foo"
+    assert WConf._get_xdg_config_paths() == [
+        Path("/home/foo/.config"),
+        Path("/etc/different"),
+        Path("/opt/conf"),
+    ]
+
+
+def test_load_xdg_1(wconf: WConf, test_data: Path) -> None:
+    if platform.system() == "Windows":
+        # not supported on Windows
+        with pytest.raises(NotImplementedError):
+            WConf._get_xdg_config_paths()
+        return
+
+    # explicitly set HOME (needed for test to run on windows)
+    os.environ["HOME"] = str(test_data / "does_not_exist")
+
+    os.environ["XDG_CONFIG_HOME"] = str(test_data)
+    wconf.load_xdg_config("conf1.json")
+    assert wconf.get() == {"foobar": _foobar, "type": "json"}
+
+
+def test_load_xdg_2(wconf: WConf, test_data: Path) -> None:
+    if platform.system() == "Windows":
+        # not supported on Windows
+        with pytest.raises(NotImplementedError):
+            WConf._get_xdg_config_paths()
+        return
+
+    # explicitly set HOME (needed for test to run on windows)
+    os.environ["HOME"] = str(test_data / "does_not_exist")
+
+    os.environ["XDG_CONFIG_HOME"] = str(test_data / "does_not_exist")
+    os.environ["XDG_CONFIG_DIRS"] = str(test_data)
+    wconf.load_xdg_config("conf1.json")
+    assert wconf.get() == {"foobar": _foobar, "type": "json"}
+
+
+def test_load_xdg_3(wconf: WConf, test_data: Path, tmp_path: Path) -> None:
+    if platform.system() == "Windows":
+        # not supported on Windows
+        with pytest.raises(NotImplementedError):
+            WConf._get_xdg_config_paths()
+        return
+
+    config_dir = tmp_path / ".config" / "foo"
+    config_dir.mkdir(parents=True)
+
+    shutil.copyfile(test_data / "conf1.json", config_dir / "conf.json")
+
+    # set HOME
+    os.environ["HOME"] = str(tmp_path)
+    os.environ["XDG_CONFIG_HOME"] = ""
+    os.environ["XDG_CONFIG_DIRS"] = ""
+    wconf.load_xdg_config("foo/conf.json")
+    assert wconf.get() == {"foobar": _foobar, "type": "json"}
+
+
+def test_load_xdg_not_found_no_fail(wconf: WConf, test_data: Path) -> None:
+    if platform.system() == "Windows":
+        # not supported on Windows
+        with pytest.raises(NotImplementedError):
+            WConf._get_xdg_config_paths()
+        return
+
+    # explicitly set HOME (needed for test to run on windows)
+    os.environ["HOME"] = str(test_data / "does_not_exist")
+
+    os.environ["XDG_CONFIG_HOME"] = str(test_data / "does_not_exist")
+    os.environ["XDG_CONFIG_DIRS"] = str(test_data / "does_not_exist")
+    wconf.load_xdg_config("conf1.json")
+    assert wconf.get(allow_missing=True) == _schema
+
+
+def test_load_xdg_not_found_fail(wconf: WConf, test_data: Path) -> None:
+    if platform.system() == "Windows":
+        # not supported on Windows
+        with pytest.raises(NotImplementedError):
+            WConf._get_xdg_config_paths()
+        return
+
+    # explicitly set HOME (needed for test to run on windows)
+    os.environ["HOME"] = str(test_data / "does_not_exist")
+
+    os.environ["XDG_CONFIG_HOME"] = str(test_data / "does_not_exist")
+    os.environ["XDG_CONFIG_DIRS"] = str(test_data / "does_not_exist")
+    with pytest.raises(FileNotFoundError):
+        wconf.load_xdg_config("conf1.json", fail_if_not_found=True)
 
 
 def test_load_chaining(wconf, test_data):
