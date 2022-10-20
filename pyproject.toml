@@ -42,7 +42,8 @@ toml = ["tomli"]
 yaml = ["pyyaml"]
 
 test = ["wconf[all]", "pytest"]
-mypy = ["wconf[all]", "mypy", "types-PyYAML", "types-setuptools"]
+# include test dependencies for mypy, so tests can be checked as well
+mypy = ["wconf[test]", "mypy", "types-PyYAML", "types-setuptools"]
 
 [tool.setuptools.dynamic]
 version = {attr = "wconf.__version__"}
