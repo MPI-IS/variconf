@@ -1,6 +1,7 @@
 import pathlib
 
 import pytest
+import omegaconf.errors
 
 from variconf import WConf
 
@@ -116,14 +117,14 @@ def test_add_file_loader(test_data):
         return cfg_dict
 
     # test with load()
-    wconf = WConf({})
+    wconf = WConf({}, strict=False)
     wconf.add_file_loader("ini", [".ini"], configparser_loader)
     with open(test_data / "conf.ini") as f:
         wconf.load(f, "ini")
     assert wconf.get() == {"section1": {"foo": "42", "bar": "yes"}}
 
     # test with load_file()
-    wconf = WConf({})
+    wconf = WConf({}, strict=False)
     wconf.add_file_loader("ini", [".ini"], configparser_loader)
     wconf.load_file(test_data / "conf.ini")
     assert wconf.get() == {"section1": {"foo": "42", "bar": "yes"}}
@@ -152,3 +153,34 @@ def test_load_chaining(wconf, test_data):
 
     # make sure the original object contains all the changes
     assert wconf.get() == cfg
+
+
+def test_strict_true(test_data):
+    # with strict=True, loading a config that contains additional arguments should
+    # result in an error.
+    wconf = WConf(_schema, strict=True)
+    with pytest.raises(omegaconf.errors.ConfigKeyError):
+        wconf.load_file(test_data / "conf_additional_1.toml")
+
+    wconf = WConf(_schema, strict=True)
+    with pytest.raises(omegaconf.errors.ConfigKeyError):
+        wconf.load_file(test_data / "conf_additional_2.toml")
+
+
+def test_strict_true_default(test_data):
+    # make sure strict is enabled by default
+    wconf = WConf(_schema)
+    with pytest.raises(omegaconf.errors.ConfigKeyError):
+        wconf.load_file(test_data / "conf_additional_1.toml")
+
+
+def test_strict_false(wconf, test_data):
+    # with strict=False, loading a config file with additional arguments is allowed, the
+    # additional parameters are merged into the config.
+    wconf = WConf(_schema, strict=False)
+    wconf.load_file(test_data / "conf_additional_1.toml")
+    assert wconf.get().foobar.additional == "this is not in the schema"
+
+    wconf = WConf(_schema, strict=False)
+    wconf.load_file(test_data / "conf_additional_2.toml")
+    assert wconf.get().additional == {"bla": 1, "blub": 2}
