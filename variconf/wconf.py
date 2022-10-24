@@ -61,7 +61,6 @@ class WConf:
                 configuration.  Note that providing a dataclass as schema implies
                 strict=True.
         """
-        # TODO: support schema from file?
         self.cfg = oc.OmegaConf.create(schema)
 
         if strict:
