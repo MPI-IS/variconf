@@ -101,9 +101,26 @@ class WConf:
         """Get list of supported file formats."""
         return list(self._loaders.keys())
 
-    def get(self) -> oc.OmegaConf:
-        """Get the configuration object."""
-        # TODO: Add allow_missing argument
+    def get(self, allow_missing=False) -> oc.OmegaConf:
+        """Get the configuration object.
+
+        Args:
+            allow_missing: If enabled, the config can still contain required parameters
+                which have not been set (accessing them will result in an error).  If
+                disabled (default), get() will check the configuration for missing
+                required values and raise an error instead of returning the config.
+
+        Raises:
+            omegaconfig.errors.MissingMandatoryValue: If ``allow_missing=False`` and the
+                config has one or more required values (marked as missing in the
+                schema), which have not been filled yet.
+        """
+        if not allow_missing:
+            # the easiest way to check the whole config is to convert to a container
+            # with throw_on_missing=True (even though, we're not interested in the
+            # resulting container...).
+            oc.OmegaConf.to_container(self.cfg, throw_on_missing=True)
+
         return self.cfg
 
     def load(self, fp, format: str) -> WConf:
