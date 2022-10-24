@@ -46,7 +46,7 @@ def test_defaults(wconf):
 
 
 def test_get(wconf):
-    assert wconf.cfg == wconf.get()
+    assert wconf.cfg == wconf.get(allow_missing=True)
 
 
 def test_load_json(wconf, test_data):
@@ -184,3 +184,15 @@ def test_strict_false(wconf, test_data):
     wconf = WConf(_schema, strict=False)
     wconf.load_file(test_data / "conf_additional_2.toml")
     assert wconf.get().additional == {"bla": 1, "blub": 2}
+
+
+def test_required_parameter(wconf):
+    # "type" is required in the schema ("???") but no config has been provided to set
+    # the value.  Accessing it should result in an error.
+    cfg = wconf.get(allow_missing=True)
+    with pytest.raises(omegaconf.errors.MissingMandatoryValue):
+        cfg.type
+
+    # With allow_missing=False, we should already get an error when calling get()
+    with pytest.raises(omegaconf.errors.MissingMandatoryValue):
+        wconf.get(allow_missing=False)
