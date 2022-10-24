@@ -49,17 +49,23 @@ class WConf:
 
     """
 
-    def __init__(self, schema) -> None:
+    def __init__(self, schema, strict: bool = True) -> None:
         """
         Args:
             schema: Configuration structure including all parameters with their default
                 vaules.  This can be a dictionary, a dataclass (in which case type
                 checking is enabled) or any other object that is supported by
                 ``OmegaConf.create``.
+            strict: If true, loading a configuration with parameters that are not listed
+                in schema results in an error.  If false, they will be merged into the
+                configuration.  Note that providing a dataclass as schema implies
+                strict=True.
         """
-        # TODO: add allow_unknown argument
-        # TODO: support schema from file
+        # TODO: support schema from file?
         self.cfg = oc.OmegaConf.create(schema)
+
+        if strict:
+            oc.OmegaConf.set_struct(self.cfg, True)
 
         self._loaders: typing.Dict[str, typing.Tuple[LoaderFunction, bool]] = {
             "json": (self._load_json, False),

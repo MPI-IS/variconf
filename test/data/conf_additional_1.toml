@@ -1,0 +1,6 @@
+type = "toml"
+
+[foobar]
+foo = 42
+bar = 13
+additional = "this is not in the schema"

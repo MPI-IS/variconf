@@ -1,0 +1,10 @@
+type = "toml"
+
+[foobar]
+foo = 42
+bar = 13
+
+# additional section that is not in schema
+[additional]
+bla = 1
+blub = 2
