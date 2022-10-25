@@ -6,6 +6,8 @@ import os
 
 import omegaconf as oc
 
+from . import errors
+
 
 _PathLike = typing.Union[os.PathLike, str]
 
@@ -137,8 +139,11 @@ class WConf:
         Returns:
             ``self``, so methods can be chained when loading from multiple sources.
         """
-        # TODO: more specific error for unsupported format
-        loader, _ = self._loaders[format]
+        try:
+            loader, _ = self._loaders[format]
+        except KeyError:
+            raise errors.UnknownFormatError(format)
+
         cfg = loader(fp)
         self._merge(cfg)
 
@@ -158,9 +163,13 @@ class WConf:
             ``self``, so methods can be chained when loading from multiple sources.
         """
         file = pathlib.Path(file)
-        fmt = self._file_extensions[file.suffix]
-        _, binary = self._loaders[fmt]
 
+        try:
+            fmt = self._file_extensions[file.suffix]
+        except KeyError:
+            raise errors.UnknownExtensionError(file.suffix)
+
+        _, binary = self._loaders[fmt]
         if binary:
             mode = "rb"
         else:
