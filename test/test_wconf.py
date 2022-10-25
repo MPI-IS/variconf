@@ -3,7 +3,7 @@ import pathlib
 import pytest
 import omegaconf.errors
 
-from variconf import WConf
+from variconf import WConf, errors
 
 
 _schema = {
@@ -70,6 +70,14 @@ def test_load_toml(wconf, test_data):
     assert wconf.get() == {"foobar": _foobar, "type": "toml"}
 
 
+def test_load_unknown(wconf, test_data):
+    with pytest.raises(errors.UnknownFormatError) as e:
+        with open(test_data / "conf1.toml") as f:
+            wconf.load(f, "bad")
+
+    assert str(e.value) == "bad"
+
+
 def test_load_file_json(wconf, test_data):
     wconf.load_file(test_data / "conf1.json")
     assert wconf.get() == {"foobar": _foobar, "type": "json"}
@@ -83,6 +91,13 @@ def test_load_file_yaml(wconf, test_data):
 def test_load_file_toml(wconf, test_data):
     wconf.load_file(test_data / "conf1.toml")
     assert wconf.get() == {"foobar": _foobar, "type": "toml"}
+
+
+def test_load_file_unknown(wconf, test_data):
+    with pytest.raises(errors.UnknownExtensionError) as e:
+        wconf.load_file(test_data / "conf.ini")
+
+    assert str(e.value) == ".ini"
 
 
 def test_load_dict(wconf):
