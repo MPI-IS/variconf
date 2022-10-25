@@ -16,6 +16,7 @@ LoaderFunction = typing.Union[
 ]
 
 
+# TODO: Rename the class, now that the package got renamed?
 class WConf:
     """Load configuration from files.
 
