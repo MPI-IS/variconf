@@ -137,7 +137,6 @@ class WConf:
         Returns:
             ``self``, so methods can be chained when loading from multiple sources.
         """
-        # TODO: handle fp type (text vs binary)
         # TODO: more specific error for unsupported format
         loader, _ = self._loaders[format]
         cfg = loader(fp)
