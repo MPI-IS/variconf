@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import typing
 import pathlib
+import platform
 import os
 
 import omegaconf as oc
@@ -149,7 +150,12 @@ class WConf:
 
         return self
 
-    def load_file(self, file: _PathLike) -> WConf:
+    def load_file(
+        self,
+        file: _PathLike,
+        fail_if_not_found: bool = True,
+        search_paths: typing.Optional[typing.Sequence[_PathLike]] = None,
+    ) -> WConf:
         """Load configuration from the specified file.
 
         The format of the file is derived from the filename extension.
@@ -157,12 +163,45 @@ class WConf:
         loaders for other formats can be added with :meth:`add_file_loader`.
 
         Args:
-            file: A file in one of the supported formats.
+            file:  A file in one of the supported formats.
+            fail_if_not_found:  If true, raise an error if the file is not found.
+                Otherwise simply return without loading anything (i.e. keep the current
+                values).
+            search_paths:  List of directories.  If set, search these directories for a
+                file with the name specified in ``file`` and loads the first file that
+                is found.
 
         Returns:
             ``self``, so methods can be chained when loading from multiple sources.
         """
         file = pathlib.Path(file)
+        # TODO: This function can probably be refactored a bit
+
+        # if search_path is set, check the listed directories for the file
+        if search_paths:
+            found = False
+            for directory in search_paths:
+                directory = pathlib.Path(directory)
+                _file = directory / file
+                if _file.is_file():
+                    found = True
+                    break
+
+            if not found:
+                if fail_if_not_found:
+                    raise FileNotFoundError(f"No file {file} found in {search_paths}")
+                else:
+                    return self
+
+            file = _file
+        else:
+            file = pathlib.Path(file)
+
+        if not file.is_file():
+            if fail_if_not_found:
+                raise FileNotFoundError(file)
+            else:
+                return self
 
         try:
             fmt = self._file_extensions[file.suffix]
@@ -233,13 +272,46 @@ class WConf:
         self._merge(cfg)
         return self
 
-    def load_xdg(self, filename: str) -> WConf:
-        """TODO"""
-        raise NotImplementedError()
-        return self
+    @staticmethod
+    def _get_xdg_config_paths() -> typing.List[pathlib.Path]:
+        if platform.system() == "Windows":
+            raise NotImplementedError("XDG support is not implemented for Windows.")
 
-    def load_from_path(self, filename: str, path: typing.Sequence[_PathLike]) -> WConf:
-        """TODO"""
-        # TODO: better name?
-        raise NotImplementedError()
-        return self
+        # get config_home
+        config_home_default = pathlib.Path(os.environ["HOME"], ".config")
+
+        config_home = pathlib.Path(os.environ.get("XDG_CONFIG_HOME", ""))
+        if not config_home.is_absolute():
+            config_home = config_home_default
+
+        # get config dirs
+        config_dirs_str = os.environ.get("XDG_CONFIG_DIRS", "")
+        _config_dirs = config_dirs_str.split(":")
+        config_dirs = list(
+            filter(lambda p: p.is_absolute(), map(pathlib.Path, _config_dirs))
+        )
+        if not config_dirs:
+            config_dirs = [pathlib.Path("/etc/xdg")]
+
+        return [config_home] + config_dirs
+
+    def load_xdg_config(self, filename: _PathLike, fail_if_not_found=False) -> WConf:
+        """Load file from XDG config directory.
+
+        Searches for the specified file in the directories given in the
+        ``XDG_CONFIG_HOME`` and ``XDG_CONFIG_DIRS`` environment variables.  If they are
+        not set, they default to ``${HOME}/.config`` and ``/etc/xdg``.
+
+        For more information on the XDG base directory specification see
+        https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html
+
+        Args:
+            filename: Name of the file, relative to the config directory.
+            fail_if_not_found:  If true, raise an error if the file is not found.
+                Otherwise simply return without loading anything (i.e. keep the current
+                values).
+        """
+        paths = self._get_xdg_config_paths()
+        return self.load_file(
+            filename, fail_if_not_found=fail_if_not_found, search_paths=paths
+        )

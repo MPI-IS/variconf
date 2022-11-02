@@ -88,12 +88,49 @@ schema = {"sec1": {"foo": 42, "bar": 13}, "sec2": {"bla": ""}}
 wconf = variconf.WConf(schema)
 config = (
     wconf.load_file("~/global_config.toml")
-    .load_file("./local_config.yml")
+    .load_file("./local_config.yml", fail_if_not_found=False)
     .load_dotlist(sys.argv[1:])  # easily allow overwriting parameters via
                                  # command-line arguments
     .get()  # return the final config object
 )
 ```
+
+
+### Search File
+
+Assuming an application where the config file can be located in one of several places
+(e.g. `~`, `~/.config` or `/etc/myapp`).  This situation is supported by the optional
+`search_paths` argument of `load_file()`:
+
+```python
+wconf.load_file(
+    "config.yml",
+    search_paths=[os.expanduser("~"), os.expanduser("~/.config"), "/etc/myapp"],
+    fail_if_not_found=False,
+)
+```
+This will search for a file "config.yml" in the listed directories (in the given order)
+and use the first match.
+By setting `fail_if_not_found=False`, we specify that it's okay if the file is not found
+in any of these directories.  In this case, we simply keep the default values of all
+parameters.
+
+
+### Using XDG Base Directory Specification
+
+If your application follows the [XDG Base Directory
+Specification](https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html)
+you can use ``load_xdg_config()`` (currently not supported on Windows!):
+
+```python
+wconf.load_xdg_config("myapp/config.toml")
+```
+Will search for the file in the directories specified in the environment variables
+`XDG_CONFIG_HOME` and `XDG_CONFIG_DIRS` (defaulting to `~/.config`).
+
+Like for `load_file()` there is an argument `fail_if_not_found` but here it defaults to
+False as providing a config in `XDG_CONFIG_HOME` is typically optional.
+
 
 ### Supported File Types
 
@@ -163,5 +200,3 @@ Missing Features
   `OmegaConf.set_struct`).
 - Option to load the config schema from a file.
 - Use custom errors, e.g. in case of unsupported file formats.
-- Find config file in a list of possible locations.
-- Find config file based on [XDG specification](https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html).

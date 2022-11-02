@@ -1,0 +1,12 @@
+{
+    "type": "json",
+    "foobar": {
+        "foo": 123,
+        "bar": 456,
+        "nested": {
+            "one": 99,
+            "two": 91,
+            "three": 93
+        }
+    }
+}
