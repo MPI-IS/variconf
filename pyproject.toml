@@ -10,10 +10,10 @@ description = """\
     files.\
     """
 authors = [
-    {name = "Felix Widmaier", email = "felix.widmaier@tue.mpg.de"},
+    {name = "Felix Kloss", email = "felix.widmaier@tue.mpg.de"},
 ]
 maintainers = [
-    {name = "Felix Widmaier", email = "felix.widmaier@tue.mpg.de"}
+    {name = "Felix Kloss", email = "felix.widmaier@tue.mpg.de"}
 ]
 readme = "README.md"
 keywords = ["config", "configuration"]
