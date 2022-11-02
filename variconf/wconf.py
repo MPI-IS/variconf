@@ -86,8 +86,7 @@ class WConf:
                 ``OmegaConf.create``.
             strict: If true, loading a configuration with parameters that are not listed
                 in schema results in an error.  If false, they will be merged into the
-                configuration.  Note that providing a dataclass as schema implies
-                strict=True.
+                configuration.
         """
         self.cfg = oc.OmegaConf.create(schema)
 
