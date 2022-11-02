@@ -19,6 +19,30 @@ LoaderFunction = typing.Union[
 ]
 
 
+def find_file(
+    filename: pathlib.Path, search_paths: typing.Sequence[_PathLike]
+) -> pathlib.Path:
+    """Search for a file in a list of directories.
+
+    Args:
+        filename: Name of the file (can also be a relative path).
+        search_paths:  List of directories in which the file is searched.
+
+    Returns:
+        The path to the first matching file that is found.
+
+    Raises:
+        FileNotFoundError: If the file is not found in any of the directories in
+            search_paths.
+    """
+    for directory in map(pathlib.Path, search_paths):
+        _file = directory / filename
+        if _file.is_file():
+            return _file
+
+    raise FileNotFoundError(f"No file {filename} found in {search_paths}")
+
+
 # TODO: Rename the class, now that the package got renamed?
 class WConf:
     """Load configuration from files.
@@ -175,31 +199,18 @@ class WConf:
             ``self``, so methods can be chained when loading from multiple sources.
         """
         file = pathlib.Path(file)
-        # TODO: This function can probably be refactored a bit
 
-        # if search_path is set, check the listed directories for the file
-        if search_paths:
-            found = False
-            for directory in search_paths:
-                directory = pathlib.Path(directory)
-                _file = directory / file
-                if _file.is_file():
-                    found = True
-                    break
-
-            if not found:
-                if fail_if_not_found:
-                    raise FileNotFoundError(f"No file {file} found in {search_paths}")
-                else:
-                    return self
-
-            file = _file
-        else:
-            file = pathlib.Path(file)
-
-        if not file.is_file():
+        # If search_path is set, search for the file in these paths.  Otherwise directly
+        # use `file`.
+        try:
+            if search_paths:
+                file = find_file(file, search_paths)
+            else:
+                if not file.is_file():
+                    raise FileNotFoundError(file)
+        except Exception as e:
             if fail_if_not_found:
-                raise FileNotFoundError(file)
+                raise e
             else:
                 return self
 
