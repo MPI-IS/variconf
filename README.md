@@ -10,8 +10,6 @@ added by registering a custom loader function.
 Thanks to the power of OmegaConf, you can provide a configuration schema which the
 defines expected parameters, default values and optionally expected types.
 
-**Note: This project is currently in alpha phase.  Changes to the API may happen.**
-
 
 Design Goals
 ------------
@@ -26,21 +24,7 @@ This package is developed with the following goals in mind:
   dictionary should be supported (json, toml, yaml, ...).
 - Optionally check types.
 - Optionally check for unknown parameters in the file (to raise an error).
-- Keep it simple.  Prefer less features over too complicated API.
-
-
-Why Another Configuration Loader?
----------------------------------
-
-As loading configuration from a file in a controlled manner is a rather common task when
-implementing applications, I expected that there should already be a well adopted
-solution for it.  However, I could not find something that satisfies all my requirements
-listed above.
-
-There is, however, [OmegaConf](https://omegaconf.readthedocs.io), which already does
-most of it.  It mostly is only missing the flexibility regarding file types.
-Hence, I started to develop VariConf, which is basically just a thin wrapper around
-OmegaConf, adding the things that I was missing.
+- Keep it simple.  Prefer fewer features over too complicated API.
 
 
 Installation
@@ -67,9 +51,10 @@ pip install "variconf[all]"
 Usage
 -----
 
-When creating an instance of `WConf`, a configuration "schema" needs to be given,
-i.e. a structure (e.g. dictionary) that defines what sections and parameters the
-configuration has and that provides default values.
+The package provides a class `WConf` for loading and merging configurations from
+different sources. When creating an instance of it, a configuration "schema" needs to be
+given, i.e. a structure (dictionary or dataclass) that defines what sections and
+parameters the configuration has and that provides default values.
 
 A number of "load"-methods is provided to load configurations from different sources
 (e.g. JSON files, YAML files, dictionaries from other sources, ...).  When called,
@@ -93,6 +78,24 @@ config = (
                                  # command-line arguments
     .get()  # return the final config object
 )
+```
+
+
+### Allow Unknown Parameters
+
+By default an error is raised if the loaded configuration contains parameters that are
+not declared in the schema.  If you want to allow these unknown parameters, initialise
+`WConf` with `strict=False`:
+
+```python
+wconf = variconf.WConf(schema, strict=False)
+```
+
+This will result in the unknown parameters being merged into the config object.
+
+With this you can even omit the schema altogether by simply passing an empty dictionary:
+```python
+wconf = variconf.WConf({}, strict=False)
 ```
 
 
@@ -161,17 +164,44 @@ OmegaConf supports type-checking by providing a schema as dataclass with type hi
 ```python
 @dataclasses.dataclass
 class ConfigSchema:
-    foo: int
-    bar: str
+    foo: int = 42
+    bar: str = 13
 
 wconf = variconf.WConf(ConfigSchema)
+
+# raises ValidationError: Value 'hi' of type 'str' could not be converted to Integer
+wconf.load_dict({"foo": "hi"})
 ```
 
 ### Required Values
 
-OmegaConf supports required values by adding the corresponding parameter to the config
-but setting its value to "???" to indicate that it is missinge.  See documentation of
-OmegaConf for more on this.
+Required parameters without default value are supported through OmegaConf's concept of
+missing values.
+
+When using a dictionary schema:
+
+```python
+schema = {
+    "optional_param": "default value",
+    "required_param": "???",
+}
+```
+
+When using a dataclass schema:
+
+```python
+@dataclasses.dataclass
+class Schema:
+    required_param1: float  # not providing a default makes it required
+    optional_param: str = "default value"
+    required_param2: int = omegaconf.MISSING  # alternative for required parameters
+```
+
+If there is a required parameter for which no value has been provided by any of the
+`load*`-methods, calling `get()` will raise an error.
+
+You can avoid that error by using `get(allow_missing=True)`.  However, the error is
+still raised when trying to access the actual value of the missing parameter.
 
 
 ### Variable Interpolation
@@ -191,12 +221,3 @@ client:
   description: Client of ${.url}
 ```
 See the documentation of OmegaConf for more information.
-
-
-Missing Features
-----------------
-
-- Option to raise error if config input contains unexpected parameters (using
-  `OmegaConf.set_struct`).
-- Option to load the config schema from a file.
-- Use custom errors, e.g. in case of unsupported file formats.
