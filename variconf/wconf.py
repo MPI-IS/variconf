@@ -43,7 +43,6 @@ def find_file(
     raise FileNotFoundError(f"No file {filename} found in {search_paths}")
 
 
-# TODO: Rename the class, now that the package got renamed?
 class WConf:
     """Load configuration from files.
 
