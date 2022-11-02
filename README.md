@@ -221,3 +221,14 @@ client:
   description: Client of ${.url}
 ```
 See the documentation of OmegaConf for more information.
+
+
+Copyright and License
+---------------------
+
+VariConf is written and maintained by Felix Kloss at the Max Planck Institute for
+Intelligent Systems, Tübingen.
+
+Copyright (c) 2022, Max Planck Gesellschaft. All rights reserved.
+
+License: [BSD 3-clause](LICENSE)
