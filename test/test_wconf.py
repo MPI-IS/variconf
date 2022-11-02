@@ -52,6 +52,15 @@ def test_get(wconf):
     assert wconf.cfg == wconf.get(allow_missing=True)
 
 
+def test_get_supported_formats(wconf):
+    # json, yaml and toml are supported out of the box
+    assert set(wconf.get_supported_formats()) == set(["json", "yaml", "toml"])
+
+    # when adding custom types, they should be included in the list as well
+    wconf.add_file_loader("foo", [".foo"], lambda x: {})
+    assert set(wconf.get_supported_formats()) == set(["json", "yaml", "toml", "foo"])
+
+
 def test_load_json(wconf, test_data):
     with open(test_data / "conf1.json") as f:
         wconf.load(f, "json")
