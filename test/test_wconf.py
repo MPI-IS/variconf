@@ -1,3 +1,4 @@
+import dataclasses
 import os
 import platform
 import shutil
@@ -9,6 +10,7 @@ import omegaconf.errors
 from variconf import WConf, errors
 
 
+# Schema using dictionary
 _schema = {
     "foobar": {
         "foo": 1,
@@ -34,24 +36,70 @@ _foobar = {
 }
 
 
+# Alternative schema using dataclasses
+@dataclasses.dataclass
+class Nested:
+    one: int = 0
+    two: int = 0
+    three: int = 0
+
+
+@dataclasses.dataclass
+class Foobar:
+    foo: int = 1
+    bar: int = 1
+    nested: Nested = dataclasses.field(default_factory=Nested)
+
+
+@dataclasses.dataclass
+class Schema:
+
+    foobar: Foobar = dataclasses.field(default_factory=Foobar)
+    type: str = omegaconf.MISSING
+
+
 @pytest.fixture
 def test_data() -> Path:
     return Path(__file__).parent / "data"
 
 
 @pytest.fixture
-def wconf() -> WConf:
+def wconf_variant() -> WConf:
     return WConf(_schema)
 
 
+@pytest.fixture
+def wconf_typed() -> WConf:
+    return WConf(Schema)
+
+
+@pytest.fixture
+def wconf(request):
+    """Fixture that returns another fixture by name."""
+    return request.getfixturevalue(request.param)
+
+
+@pytest.mark.parametrize("wconf", ["wconf_variant", "wconf_typed"], indirect=True)
 def test_defaults(wconf):
     assert wconf.cfg == _schema
 
 
+@pytest.mark.parametrize("wconf", ["wconf_variant", "wconf_typed"], indirect=True)
 def test_get(wconf):
     assert wconf.cfg == wconf.get(allow_missing=True)
 
 
+@pytest.mark.parametrize("wconf", ["wconf_variant", "wconf_typed"], indirect=True)
+def test_get_supported_formats(wconf):
+    # json, yaml and toml are supported out of the box
+    assert set(wconf.get_supported_formats()) == set(["json", "yaml", "toml"])
+
+    # when adding custom types, they should be included in the list as well
+    wconf.add_file_loader("foo", [".foo"], lambda x: {})
+    assert set(wconf.get_supported_formats()) == set(["json", "yaml", "toml", "foo"])
+
+
+@pytest.mark.parametrize("wconf", ["wconf_variant", "wconf_typed"], indirect=True)
 def test_load_json(wconf, test_data):
     with open(test_data / "conf1.json") as f:
         wconf.load(f, "json")
@@ -59,6 +107,7 @@ def test_load_json(wconf, test_data):
     assert wconf.get() == {"foobar": _foobar, "type": "json"}
 
 
+@pytest.mark.parametrize("wconf", ["wconf_variant", "wconf_typed"], indirect=True)
 def test_load_yaml(wconf, test_data):
     with open(test_data / "conf1.yml") as f:
         wconf.load(f, "yaml")
@@ -66,6 +115,7 @@ def test_load_yaml(wconf, test_data):
     assert wconf.get() == {"foobar": _foobar, "type": "yaml"}
 
 
+@pytest.mark.parametrize("wconf", ["wconf_variant", "wconf_typed"], indirect=True)
 def test_load_toml(wconf, test_data):
     with open(test_data / "conf1.toml", "rb") as f:
         wconf.load(f, "toml")
@@ -73,6 +123,7 @@ def test_load_toml(wconf, test_data):
     assert wconf.get() == {"foobar": _foobar, "type": "toml"}
 
 
+@pytest.mark.parametrize("wconf", ["wconf_variant", "wconf_typed"], indirect=True)
 def test_load_unknown(wconf, test_data):
     with pytest.raises(errors.UnknownFormatError) as e:
         with open(test_data / "conf1.toml") as f:
@@ -81,21 +132,25 @@ def test_load_unknown(wconf, test_data):
     assert str(e.value) == "bad"
 
 
+@pytest.mark.parametrize("wconf", ["wconf_variant", "wconf_typed"], indirect=True)
 def test_load_file_json(wconf, test_data):
     wconf.load_file(test_data / "conf1.json")
     assert wconf.get() == {"foobar": _foobar, "type": "json"}
 
 
+@pytest.mark.parametrize("wconf", ["wconf_variant", "wconf_typed"], indirect=True)
 def test_load_file_yaml(wconf, test_data):
     wconf.load_file(test_data / "conf1.yml")
     assert wconf.get() == {"foobar": _foobar, "type": "yaml"}
 
 
+@pytest.mark.parametrize("wconf", ["wconf_variant", "wconf_typed"], indirect=True)
 def test_load_file_toml(wconf, test_data):
     wconf.load_file(test_data / "conf1.toml")
     assert wconf.get() == {"foobar": _foobar, "type": "toml"}
 
 
+@pytest.mark.parametrize("wconf", ["wconf_variant", "wconf_typed"], indirect=True)
 def test_load_file_unknown(wconf, test_data):
     with pytest.raises(errors.UnknownExtensionError) as e:
         wconf.load_file(test_data / "conf.ini")
@@ -103,16 +158,19 @@ def test_load_file_unknown(wconf, test_data):
     assert str(e.value) == ".ini"
 
 
+@pytest.mark.parametrize("wconf", ["wconf_variant", "wconf_typed"], indirect=True)
 def test_load_file_fail_if_not_found(wconf, test_data):
     with pytest.raises(FileNotFoundError):
         wconf.load_file(test_data / "does_not_exist.yml")
 
 
+@pytest.mark.parametrize("wconf", ["wconf_variant", "wconf_typed"], indirect=True)
 def test_load_file_with_fail_if_not_found_false(wconf, test_data):
     wconf.load_file(test_data / "does_not_exist.yml", fail_if_not_found=False)
     assert wconf.get(allow_missing=True) == _schema
 
 
+@pytest.mark.parametrize("wconf", ["wconf_variant", "wconf_typed"], indirect=True)
 def test_load_file_with_search_path(wconf: WConf, test_data: Path, tmp_path: Path):
     paths = [
         tmp_path / "foo",
@@ -132,6 +190,7 @@ def test_load_file_with_search_path(wconf: WConf, test_data: Path, tmp_path: Pat
     assert wconf.get() == {"foobar": _foobar, "type": "json"}
 
 
+@pytest.mark.parametrize("wconf", ["wconf_variant", "wconf_typed"], indirect=True)
 def test_load_file_with_search_path_not_found(wconf: WConf, tmp_path: Path):
     paths = [
         tmp_path / "foo",
@@ -152,6 +211,7 @@ def test_load_file_with_search_path_not_found(wconf: WConf, tmp_path: Path):
         wconf.load_file("conf.json", search_paths=paths, fail_if_not_found=True)
 
 
+@pytest.mark.parametrize("wconf", ["wconf_variant", "wconf_typed"], indirect=True)
 def test_load_dict(wconf):
     wconf.load_dict(
         {
@@ -165,6 +225,48 @@ def test_load_dict(wconf):
     }
 
 
+@pytest.mark.parametrize("wconf", ["wconf_variant", "wconf_typed"], indirect=True)
+def test_load_object_dataclass(wconf):
+    cfg = Schema(Foobar(3, 6), "dataclass")
+
+    wconf.load_object(cfg)
+
+    assert wconf.get() == {
+        "foobar": {"foo": 3, "bar": 6, "nested": {"one": 0, "two": 0, "three": 0}},
+        "type": "dataclass",
+    }
+
+
+@pytest.mark.parametrize("wconf", ["wconf_variant", "wconf_typed"], indirect=True)
+def test_load_object_omegaconf(wconf):
+    cfg = omegaconf.OmegaConf.create(
+        {
+            "foobar": {"foo": 123, "nested": {"three": 4}},
+            "type": "OC",
+        }
+    )
+    wconf.load_object(cfg)
+    assert wconf.get() == {
+        "foobar": {"foo": 123, "bar": 1, "nested": {"one": 0, "two": 0, "three": 4}},
+        "type": "OC",
+    }
+
+
+def test_load_bad_type_wconf_variant(wconf_variant):
+    # when using a non-typed schema (dict), setting a parameter to a different type than
+    # the default is okay
+    wconf_variant.load_object({"foobar": {"foo": "string"}, "type": "dict"})
+    assert wconf_variant.get().foobar.foo == "string"
+
+
+def test_load_bad_type_wconf_typed(wconf_typed):
+    # when using a typed schema (dataclass), setting a parameter to a different type
+    # results in an error.
+    with pytest.raises(omegaconf.errors.ValidationError):
+        wconf_typed.load_object({"foobar": {"foo": "string"}, "type": "dict"})
+
+
+@pytest.mark.parametrize("wconf", ["wconf_variant", "wconf_typed"], indirect=True)
 def test_load_dotlist(wconf):
     wconf.load_dotlist(["foobar.foo=123", "foobar.nested.three=4", "type=dotlist"])
     assert wconf.get() == {
@@ -251,6 +353,7 @@ def test_get_xdg_config_paths():
     ]
 
 
+@pytest.mark.parametrize("wconf", ["wconf_variant", "wconf_typed"], indirect=True)
 def test_load_xdg_1(wconf: WConf, test_data: Path) -> None:
     if platform.system() == "Windows":
         # not supported on Windows
@@ -266,6 +369,7 @@ def test_load_xdg_1(wconf: WConf, test_data: Path) -> None:
     assert wconf.get() == {"foobar": _foobar, "type": "json"}
 
 
+@pytest.mark.parametrize("wconf", ["wconf_variant", "wconf_typed"], indirect=True)
 def test_load_xdg_2(wconf: WConf, test_data: Path) -> None:
     if platform.system() == "Windows":
         # not supported on Windows
@@ -282,6 +386,7 @@ def test_load_xdg_2(wconf: WConf, test_data: Path) -> None:
     assert wconf.get() == {"foobar": _foobar, "type": "json"}
 
 
+@pytest.mark.parametrize("wconf", ["wconf_variant", "wconf_typed"], indirect=True)
 def test_load_xdg_3(wconf: WConf, test_data: Path, tmp_path: Path) -> None:
     if platform.system() == "Windows":
         # not supported on Windows
@@ -302,6 +407,7 @@ def test_load_xdg_3(wconf: WConf, test_data: Path, tmp_path: Path) -> None:
     assert wconf.get() == {"foobar": _foobar, "type": "json"}
 
 
+@pytest.mark.parametrize("wconf", ["wconf_variant", "wconf_typed"], indirect=True)
 def test_load_xdg_not_found_no_fail(wconf: WConf, test_data: Path) -> None:
     if platform.system() == "Windows":
         # not supported on Windows
@@ -318,6 +424,7 @@ def test_load_xdg_not_found_no_fail(wconf: WConf, test_data: Path) -> None:
     assert wconf.get(allow_missing=True) == _schema
 
 
+@pytest.mark.parametrize("wconf", ["wconf_variant", "wconf_typed"], indirect=True)
 def test_load_xdg_not_found_fail(wconf: WConf, test_data: Path) -> None:
     if platform.system() == "Windows":
         # not supported on Windows
@@ -334,6 +441,7 @@ def test_load_xdg_not_found_fail(wconf: WConf, test_data: Path) -> None:
         wconf.load_xdg_config("conf1.json", fail_if_not_found=True)
 
 
+@pytest.mark.parametrize("wconf", ["wconf_variant", "wconf_typed"], indirect=True)
 def test_load_chaining(wconf, test_data):
     cfg = (
         wconf.load_file(test_data / "conf1.yml")
@@ -370,6 +478,7 @@ def test_strict_true_default(test_data):
         wconf.load_file(test_data / "conf_additional_1.toml")
 
 
+@pytest.mark.parametrize("wconf", ["wconf_variant", "wconf_typed"], indirect=True)
 def test_strict_false(wconf, test_data):
     # with strict=False, loading a config file with additional arguments is allowed, the
     # additional parameters are merged into the config.
@@ -382,6 +491,7 @@ def test_strict_false(wconf, test_data):
     assert wconf.get().additional == {"bla": 1, "blub": 2}
 
 
+@pytest.mark.parametrize("wconf", ["wconf_variant", "wconf_typed"], indirect=True)
 def test_required_parameter(wconf):
     # "type" is required in the schema ("???") but no config has been provided to set
     # the value.  Accessing it should result in an error.
