@@ -1,3 +1,4 @@
+import dataclasses
 import os
 import platform
 import shutil
@@ -171,6 +172,41 @@ def test_load_dict(wconf):
     assert wconf.get() == {
         "foobar": {"foo": 123, "bar": 1, "nested": {"one": 0, "two": 0, "three": 4}},
         "type": "dict",
+    }
+
+
+def test_load_object_dataclass(wconf):
+    @dataclasses.dataclass
+    class Foo:
+        foo: int
+        bar: int
+
+    @dataclasses.dataclass
+    class Foobar:
+        foobar: Foo
+        type: str
+
+    cfg = Foobar(Foo(3, 6), "dataclass")
+
+    wconf.load_object(cfg)
+
+    assert wconf.get() == {
+        "foobar": {"foo": 3, "bar": 6, "nested": {"one": 0, "two": 0, "three": 0}},
+        "type": "dataclass",
+    }
+
+
+def test_load_object_omegaconf(wconf):
+    cfg = omegaconf.OmegaConf.create(
+        {
+            "foobar": {"foo": 123, "nested": {"three": 4}},
+            "type": "OC",
+        }
+    )
+    wconf.load_object(cfg)
+    assert wconf.get() == {
+        "foobar": {"foo": 123, "bar": 1, "nested": {"one": 0, "two": 0, "three": 4}},
+        "type": "OC",
     }
 
 

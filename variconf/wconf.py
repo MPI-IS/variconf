@@ -253,18 +253,22 @@ class WConf:
         self._loaders[name] = (loader, binary)
         self._file_extensions.update({ext: name for ext in file_extensions})
 
-    def load_dict(self, config: typing.Mapping) -> WConf:
-        """Load configuration from a dictionary.
+    def load_object(self, config) -> WConf:
+        """Load configuration from a dictionary, dataclass or OmegaConf instance.
 
         Args:
-            config: Dictionary containing the configuration.
+            config: Object containing the configuration.  See OmegaConf.merge for
+                supported types.
 
         Returns:
             ``self``, so methods can be chained when loading from multiple sources.
         """
-        # TODO: better name as could also accept dataclass objects, etc.
         self._merge(config)
         return self
+
+    def load_dict(self, config: typing.Mapping) -> WConf:
+        """Alias for :meth:`load_object`."""
+        return self.load_object(config)
 
     def load_dotlist(self, dotlist: typing.List[str]) -> WConf:
         """Load configuration from a "dotlist"
