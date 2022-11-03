@@ -1,3 +1,6 @@
+# Copyright (c) 2022 Max Planck Gesellschaft
+# SPDX-License-Identifier: BSD-3-Clause
+
 import dataclasses
 import os
 import platform

@@ -1,3 +1,5 @@
+# Copyright (c) 2022 Max Planck Gesellschaft
+# SPDX-License-Identifier: BSD-3-Clause
 """Exceptions specific to the variconf package."""
 
 
