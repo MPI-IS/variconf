@@ -48,3 +48,8 @@ mypy = ["variconf[test]", "mypy", "types-PyYAML", "types-setuptools"]
 
 [tool.setuptools.dynamic]
 version = {attr = "variconf.__version__"}
+
+
+[[tool.mypy.overrides]]
+module = ["lxml", "omegaconf.*"]
+ignore_missing_imports = true
