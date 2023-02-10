@@ -56,7 +56,6 @@ class Foobar:
 
 @dataclasses.dataclass
 class Schema:
-
     foobar: Foobar = dataclasses.field(default_factory=Foobar)
     type: str = omegaconf.MISSING
 
