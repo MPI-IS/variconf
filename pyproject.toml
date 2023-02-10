@@ -49,6 +49,9 @@ mypy = ["variconf[test]", "mypy", "types-PyYAML", "types-setuptools"]
 [tool.setuptools.dynamic]
 version = {attr = "variconf.__version__"}
 
+[tool.setuptools.package-data]
+variconf = ["py.typed"]
+
 
 [tool.ruff]
 # it's easier to select all and then disable the undesired ones
