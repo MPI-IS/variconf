@@ -50,6 +50,44 @@ mypy = ["variconf[test]", "mypy", "types-PyYAML", "types-setuptools"]
 version = {attr = "variconf.__version__"}
 
 
+[tool.ruff]
+# it's easier to select all and then disable the undesired ones
+select = ["ALL"]
+extend-ignore = [
+    "BLE",
+    "COM",
+    "EM",
+    "FBT",
+    "INP",
+    "PTH",
+    "S",
+    "T20",
+    "UP",
+    "ANN101",
+    "ANN102",
+    "ANN401",
+    "D100",
+    "D107",
+    "D205",
+    "D212",
+    "G004",
+    "I001",
+    "N806",
+    "PTH123",
+    "TRY003",
+    "TRY301",
+    "TRY400",
+]
+line-length = 88  # black
+target-version = "py38"
+
+[tool.ruff.pydocstyle]
+convention = "google"
+
+[tool.ruff.per-file-ignores]
+"test/*" = ["ANN", "D", "SLF", "PLR2004"]
+
+
 [[tool.mypy.overrides]]
 module = ["lxml", "omegaconf.*"]
 ignore_missing_imports = true
